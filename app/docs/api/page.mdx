@@ -1,0 +1,143 @@
+# Todo Lists API Documentation
+
+## Overview
+
+This API facilitates the management of todo lists within an organization, allowing for operations such as creating, retrieving, and updating todo lists. Access is restricted to authorized organization members only.
+
+## Authentication
+
+All requests must include an `Authorization` header with the organization's API key.
+
+## Database Models
+
+### Organization
+
+- `id`: Auto-incremented integer, unique identifier.
+- `name`: String, defaulting to "New Organization".
+- `api_key`: String, unique, generated via `uuid()`.
+- `users`: Relation to `User`.
+- `todoLists`: Relation to `TodoList`.
+
+### User
+
+- `id`: Auto-incremented integer, unique identifier.
+- `email`: String, unique, defaulting to a placeholder email.
+- `organizationId`: Integer, linking to `Organization`.
+- `first_name`: Optional string, defaulting to a placeholder name.
+- `last_name`: Optional string, defaulting to a placeholder name.
+- `TodoList`: Relation to `TodoList`.
+
+### TodoList
+
+- `id`: Auto-incremented integer, unique identifier.
+- `title`: String.
+- `status`: String, defaulting to "not-started".
+- `priority`: String, defaulting to "medium".
+- `dueDate`: DateTime.
+- `organization_id`: Integer, linking to `Organization`.
+- `createdByUserId`: Integer, linking to `User` who created the list.
+- `assignedToUserId`: Optional integer, linking to `User` assigned to the list.
+- `archived`: Boolean, defaulting to false.
+- `Todo`: Relation to `Todo`.
+
+### Todo
+
+- `id`: String, unique identifier generated via `uuid()`.
+- `title`: String.
+- `completed`: Boolean, defaulting to false.
+- `todoListId`: Integer, linking to `TodoList`.
+
+## Endpoints
+
+### Retrieve All Todo Lists
+
+- **Endpoint:** `/api/todoLists`
+- **Method:** `GET`
+- **Description:** Fetches all non-archived todo lists for the authorized organization.
+- **Headers:** `Authorization`: Organization's API key.
+- **Response:** Array of `TodoList` objects, excluding archived lists.
+
+````markdown
+**cURL Example:**
+
+```bash
+curl -X GET "http://example.com/api/todoLists" -H "Authorization: Bearer YOUR_API_KEY"
+```
+````
+
+### Create a New Todo List
+
+- **Endpoint:** `/api/todoLists`
+- **Method:** `POST`
+- **Description:** Creates a new todo list within the organization.
+- **Headers:** `Authorization`: Organization's API key.
+- **Body:** `TodoList` object excluding `id`, `archived`, and `Todo` array for initial items.
+- **Response:** Created `TodoList` object.
+
+````markdown
+**cURL Example:**
+
+```bash
+curl -X POST "http://example.com/api/todoLists" \
+     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "title": "Project Plan",
+           "status": "in-progress",
+           "priority": "high",
+           "dueDate": "2023-12-31",
+           "Todo": [
+             {"title": "Initial Planning", "completed": false}
+           ]
+         }'
+```
+````
+
+### Retrieve a Single Todo List
+
+- **Endpoint:** `/api/todoLists/[id]`
+- **Method:** `GET`
+- **Description:** Retrieves a specific todo list by ID.
+- **Headers:** `Authorization`: Organization's API key.
+- **URL Parameters:** `id`: ID of the todo list.
+- **Response:** `TodoList` object including `Todo` items.
+
+````markdown
+**cURL Example:**
+
+```bash
+curl -X GET "http://example.com/api/todoLists/1" -H "Authorization: Bearer YOUR_API_KEY"
+```
+````
+
+### Update a Todo List
+
+- **Endpoint:** `/api/todoLists/[id]`
+- **Method:** `PUT`
+- **Description:** Updates specified fields of a todo list.
+- **Headers:** `Authorization`: Organization's API key.
+- **Body:** Partial `TodoList` object with fields to update; for `Todo` items, specify upsert operations.
+- **Response:** Updated `TodoList` object.
+
+````markdown
+**cURL Example:**
+
+```bash
+curl -X PUT "http://example.com/api/todoLists/1" \
+     -H "Authorization: Bearer YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "title": "Updated Project Plan",
+           "status": "completed",
+           "priority": "medium",
+           "dueDate": "2024-01-01",
+           "Todo": [
+             {"id": "uuid-todo-item-1", "title": "Revised Planning", "completed": true}
+           ]
+         }'
+```
+````
+
+## Error Responses
+
+- `401 Unauthorized`: Returned if the API key is missing, invalid, or does not correspond to any organization.

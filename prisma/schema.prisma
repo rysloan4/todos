@@ -1,0 +1,50 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        Int        @id @default(autoincrement())
+  name      String     @default("New Organization")
+  api_key   String     @unique @default(uuid())
+  users     User[]
+  todoLists TodoList[]
+}
+
+model User {
+  id             Int          @id @default(autoincrement())
+  email          String       @unique @default("rysloan4@gmail.com")
+  organizationId Int          @default(1)
+  first_name     String?      @default("Ryan")
+  last_name      String?      @default("Sloan")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  TodoList       TodoList[]
+}
+
+model TodoList {
+  id               Int           @id @default(autoincrement())
+  title            String
+  status           String        @default("not-started")
+  priority         String        @default("medium")
+  dueDate          DateTime
+  organization_id  Int
+  createdByUserId  Int
+  assignedToUserId Int?
+  archived         Boolean       @default(false)
+  Todo             Todo[]
+  Organization     Organization? @relation(fields: [organizationId], references: [id])
+  organizationId   Int?
+  createdByUser    User          @relation(fields: [createdByUserId], references: [id])
+}
+
+model Todo {
+  id         String   @id @default(uuid())
+  title      String
+  completed  Boolean  @default(false)
+  todoListId Int
+  todoList   TodoList @relation(fields: [todoListId], references: [id])
+}
